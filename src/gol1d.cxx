@@ -2,7 +2,6 @@
 #include <cstdlib>
 #include <cstring>
 #include <vector>
-#include <boost/dynamic_bitset.hpp>
 
 
 // Checks if a value is contained in a vector
@@ -36,6 +35,44 @@ char symbol(bool b) {
 	return b ? 'x' : ' ';
 }
 
+// Parses and validates a start array string, normalizing it to exactly 60 elements
+std::vector<bool> parseStartArray(const char* input) {
+	const size_t ARRAY_SIZE = 60;
+	
+	// Check for empty input
+	if (input == nullptr || std::strlen(input) == 0) {
+		std::cerr << "Error: Input cannot be empty" << std::endl;
+		return std::vector<bool>(); // return empty vector to signal error
+	}
+	
+	// Check for valid characters (only 0 and 1)
+	std::string inputStr(input);
+	for (size_t i = 0; i < inputStr.length(); i++) {
+		if (inputStr[i] != '0' && inputStr[i] != '1') {
+			std::cerr << "Error: Input must contain only digits 0 and 1" << std::endl;
+			std::cerr << "Invalid character at position " << i << ": '" << inputStr[i] << "'" << std::endl;
+			return std::vector<bool>(); // return empty vector to signal error
+		}
+	}
+	
+	// Normalize to exactly ARRAY_SIZE elements
+	std::vector<bool> result(ARRAY_SIZE, false);
+	
+	// Convert input string to binary, handling length differences
+	for (size_t i = 0; i < inputStr.length() && i < ARRAY_SIZE; i++) {
+		result[i] = (inputStr[i] == '1');
+	}
+	
+	// Notify user of padding/truncation if needed
+	if (inputStr.length() < ARRAY_SIZE) {
+		std::cout << "Input padded to " << ARRAY_SIZE << " elements with zeros." << std::endl;
+	} else if (inputStr.length() > ARRAY_SIZE) {
+		std::cout << "Input truncated to " << ARRAY_SIZE << " elements." << std::endl;
+	}
+	
+	return result;
+}
+
 // Prints the given 1D vector as integers, prepended by the string vname
 template <typename T>
 int println(std::vector<T> v, std::string vname) {
@@ -66,12 +103,33 @@ void wait() {
 	}
 }
 
-int main() {
+int main(int argc, char* argv[]) {
 	// Initialize the 1D "board"
+	// Get start configuration from argument or interactive input
 	const int n = 60;
-	bool array[n] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0};
-	std::vector<bool> arr(&array[0], &array[0] + n);
-	// maybe free array at some point (with proper GUI)
+	std::vector<bool> arr;
+	std::string input_str;
+	bool input_valid = false;
+	
+	// Try command-line argument first
+	if (argc > 1) {
+		arr = parseStartArray(argv[1]);
+		if (arr.size() == n) {
+			input_valid = true;
+		} else {
+			std::cout << "Invalid command-line argument. Please enter configuration interactively." << std::endl;
+		}
+	}
+	
+	// If no argument or invalid, prompt interactively
+	while (!input_valid) {
+		std::cout << "Enter start configuration (0s and 1s): ";
+		std::getline(std::cin, input_str);
+		arr = parseStartArray(input_str.c_str());
+		if (arr.size() == n) {
+			input_valid = true;
+		}
+	}
 	
 	// Define the rules for survival and birth
 	std::vector<int> cs,cb,cse,cbe;
