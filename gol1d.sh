@@ -1,3 +1,3 @@
 #!/bin/bash
 
-./bin/gol1d
+./bin/gol1d "$@"
